@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import json
 import os
 import random
@@ -7,7 +6,6 @@ import requests
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from clean_node import transform_figma_json
-from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
 mcp = FastMCP("figma")
