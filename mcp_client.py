@@ -4,6 +4,9 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import os
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 server_params = StdioServerParameters(command="python", args=["./mcp_server/server.py"])
 
@@ -22,7 +25,10 @@ def generate_html(response: str):
     Response: {response}
     """
     response = openai_client.chat.completions.create(
-        model="gpt-4o", messages=[{"role": "user", "content": prompt}]
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=16384,
+        temperature=0.6,
     )
     return response.choices[0].message.content.strip()
 
@@ -80,34 +86,36 @@ async def run(query: str):
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-
             tools = await session.list_tools()
-            # print(f"Available tools: {tools}")
 
-            prompt = get_tool_prompt(query, tools.tools)
-            llm_response = llm_client(prompt)
-            print(f"LLM Response: {llm_response}")
+            while True:
+                user_query = input("Enter your query (or 'exit' to quit): ")
+                if user_query.lower() in ["exit", "quit"]:
+                    break
 
-            tool_call = json.loads(llm_response)
-            result = await session.call_tool(
-                tool_call["tool"], arguments=tool_call["arguments"]
-            )
+                prompt = get_tool_prompt(user_query, tools.tools)
+                llm_response = llm_client(prompt)
+                print(f"LLM Response: {llm_response}")
 
-            if tool_call["tool"] == "get_node":
-                html = generate_html(result.content[0].text)
-                with open("output/file.html", "w") as f:
-                    f.write(html)
+                tool_call = json.loads(llm_response)
+                result = await session.call_tool(
+                    tool_call["tool"], arguments=tool_call["arguments"]
+                )
 
-            if tool_call["tool"] == "get_components":
-                print(f"Components: {result.content[0].text}")
-                html = generate_html(result.content[0].text)
-                with open("output/components.html", "w") as f:
-                    f.write(html)
-            if tool_call["tool"] == "generate_random_number":
-                print(f"Random number: {result.content[0].text}")
+                if tool_call["tool"] == "get_node":
+                    html = generate_html(result.content[0].text)
+                    with open("output/file.html", "w") as f:
+                        f.write(html)
+
+                if tool_call["tool"] == "get_components":
+                    print(f"Components: {result.content[0].text}")
+                    html = generate_html(result.content[0].text)
+                    with open("output/components.html", "w") as f:
+                        f.write(html)
+                if tool_call["tool"] == "generate_random_number":
+                    print(f"Random number: {result.content[0].text}")
 
 
 if __name__ == "__main__":
-    # User input
-    query = input("Enter your query: ")
-    asyncio.run(run(query))
+    # No longer need to get input here since it's in the while loop
+    asyncio.run(run(""))  # Passing empty initial query
