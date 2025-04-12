@@ -1,6 +1,6 @@
 # MCP Demo 🚀
 
-A demonstration of the Model Context Protocol (MCP) implementation with Python.
+A demonstration of the Model Context Protocol (MCP) implementation with Python, featuring both client and server components for AI model interaction.
 
 ## Installation 📦
 
